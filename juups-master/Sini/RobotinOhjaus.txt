@@ -1,0 +1,62 @@
+from robolink import *    # RoboDK API
+from robodk import *      # Robot toolbox
+import time
+RDK = Robolink()
+
+Robot = RDK.Item('UR10', ITEM_TYPE_ROBOT)
+Tool = RDK.Item('Gripper', ITEM_TYPE_TOOL)
+
+Koti  = RDK.Item('Koti')
+Picking = RDK.Item('Picking')
+Nosto1  = RDK.Item('Nosto1')
+Nosto2  = RDK.Item('Nosto2')
+Lasku  = RDK.Item('Lasku')
+
+frame_Robot = RDK.Item('UR10 Base', ITEM_TYPE_FRAME)
+frame_Laatikko = RDK.Item('LaatikonKoord', ITEM_TYPE_FRAME)
+frame_Kuljetin = RDK.Item('Conveyor Belt Base', ITEM_TYPE_FRAME)
+
+Approach = 50
+count = 19
+
+def TCP_On(toolitem): 
+    """Attaches the closest object to the toolitem Htool pose, 
+    It will also output appropriate function calls on the generated robot program (call to TCP_On)""" 
+    toolitem.AttachClosest() 
+    toolitem.RDK().RunMessage('Set air valve on') 
+    toolitem.RDK().RunProgram('TCP_On()'); 
+
+         
+
+def TCP_Off(toolitem, itemleave=0): 
+    """Detaches the closest object attached to the toolitem Htool pose, 
+    It will also output appropriate function calls on the generated robot program (call to TCP_Off)""" 
+    toolitem.DetachAll(itemleave) 
+    toolitem.RDK().RunMessage('Set air valve off') 
+    toolitem.RDK().RunProgram('TCP_Off()'); 
+
+
+Robot.setPoseTool(Tool) 
+while count != -1:
+    Robot.MoveJ(Koti)
+    Robot.MoveJ(Picking)
+
+    time.sleep(2)
+
+    Robot.setPoseFrame(frame_Laatikko)
+    Target  = RDK.Item('Target'+str(count))
+    Robot.MoveJ(Target)
+    TCP_On(Tool) 
+
+    Robot.setPoseFrame(frame_Robot)
+    Robot.MoveJ(Nosto1)
+    Robot.MoveJ(Nosto2)
+
+    Robot.setPoseFrame(frame_Kuljetin)
+    Robot.MoveJ(Lasku)
+    TCP_Off(Tool, frame_Kuljetin) 
+    Robot.setPoseFrame(frame_Robot)
+    
+    count -= 1
+
+Robot.MoveJ(Koti)
